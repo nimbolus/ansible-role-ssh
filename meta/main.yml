@@ -1,6 +1,6 @@
 galaxy_info:
   author: lu1as
-  description: sshd
+  description: OpenSSH hardening with optional certificate-based user authentication
   company: nimbolus
   issue_tracker_url: https://github.com/nimbolus/ansible-role-ssh/issues
   license: MIT
