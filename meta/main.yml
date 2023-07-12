@@ -1,4 +1,5 @@
 galaxy_info:
+  role_name: ssh
   author: lu1as
   description: OpenSSH hardening with optional certificate-based user authentication
   company: nimbolus
