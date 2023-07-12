@@ -1,0 +1,61 @@
+- name: Setup
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^{{ item.param }}"
+    line: "{{ item.param }} {{ item.value }}"
+  with_items:
+    - param: PasswordAuthentication
+      value: "no"
+    - param: PermitRootLogin
+      value: "{{ ssh_permit_root_login }}"
+    - param: Port
+      value: "{{ ssh_port }}"
+  notify: Reload sshd
+
+- name: Fetch trusted user ca keys
+  ansible.builtin.get_url:
+    url: "{{ ssh_trusted_user_ca_url }}"
+    dest: "{{ ssh_trusted_user_ca_keys }}"
+    mode: "0644"
+    validate_certs: "{{ ssh_trusted_user_ca_validate_certs }}"
+  check_mode: false
+  when: not ansible_check_mode and ssh_trusted_user_ca
+
+- name: Set trusted user ca keys
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    line: "TrustedUserCAKeys {{ ssh_trusted_user_ca_keys }}"
+    regexp: "^TrustedUserCAKeys"
+    state: "{{ 'present' if ssh_trusted_user_ca else 'absent' }}"
+  notify: Reload sshd
+
+- name: Ensure authorized principals directory
+  ansible.builtin.file:
+    path: "{{ ssh_authorized_principals_directory }}"
+    state: "{{ 'directory' if ssh_trusted_user_ca and ssh_authorized_principals else 'absent' }}"
+    mode: "0755"
+
+- name: Configure authorized principals file
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    line: "AuthorizedPrincipalsFile {{ ssh_authorized_principals_directory }}/%u"
+    regexp: "^AuthorizedPrincipalsFile"
+    state: "{{ 'present' if ssh_trusted_user_ca and ssh_authorized_principals else 'absent' }}"
+  notify: Reload sshd
+
+- name: Configure authorized principals
+  ansible.builtin.copy:
+    dest: "{{ ssh_authorized_principals_directory }}/{{ item.key }}"
+    content: |
+      {% for v in item.value %}
+      {{ v }}
+      {% endfor %}
+    mode: "0644"
+  notify: Reload sshd
+  loop: "{{ query('dict', ssh_authorized_principals) }}"
+  when: ssh_trusted_user_ca
+
+- name: Enable sshd
+  ansible.builtin.systemd:
+    name: sshd
+    enabled: true

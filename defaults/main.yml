@@ -1,0 +1,11 @@
+ssh_port: 22
+ssh_permit_root_login: "no" # or without-password
+ssh_trusted_user_ca: false
+ssh_trusted_user_ca_url: http://127.0.0.1:8200/v1/ssh-client-signer/public_key
+ssh_trusted_user_ca_validate_certs: true
+ssh_trusted_user_ca_keys: /etc/ssh/trusted_user_ca_keys.pem
+ssh_authorized_principals_directory: /etc/ssh/auth_principals
+ssh_authorized_principals: {}
+  # <local-user>: ["<principal>“]
+  # root:
+  #   - administrator
